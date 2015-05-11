@@ -6,6 +6,7 @@ from numpy import * #arange,array,append, concatenate, fromfile, tofile, where, 
 # from operator import itemgetter
 from mosaic.qdfTrajIO import *
 import numpy as npts
+import mosaic.sigproc as sigproc
 
 def catQDF(fileList, outputFile, dwell,ScreenLongOpens = None, ScreenLongBlocks = None, ScreenToggles = None, ScreenTogglesLITE = None):
 ###############################################################################
