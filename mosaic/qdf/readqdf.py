@@ -1,3 +1,4 @@
+#MOSAIC utilties from EBS for qdf
 import math
 from struct import unpack
 from numpy import * #arange,array,append, concatenate, fromfile, tofile, where, putmask, zeros, average, ravel, nonzero, ceil, mean, transpose
@@ -178,6 +179,7 @@ class QDFDataFile(object):
 #	Methods:
 #			set_size - sets the integer size for writing (2 or 4 bytes)
 #			read - reads a .qdf file
+
 #			set_data - adds or replaces data
 #			write - writes a .qdf file
 	def __init__(self,filename, t_range = None, readData=1):
