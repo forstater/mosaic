@@ -1,7 +1,7 @@
 import math
 from struct import unpack
 from numpy import * #arange,array,append, concatenate, fromfile, tofile, where, putmask, zeros, average, ravel, nonzero, ceil, mean, transpose
-from operator import itemgetter
+# from operator import itemgetter
 
 def catQDF(fileList, outputFile, dwell,ScreenLongOpens = None, ScreenLongBlocks = None, ScreenToggles = None, ScreenTogglesLITE = None):
 ###############################################################################
