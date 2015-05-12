@@ -278,7 +278,10 @@ def dataScreenToggles(data, screenParms, Scale = 1):
 
 ###############################################################################
 #	function Name: dataScreenTogglesLITE
-#	Author: Ryan Dunnam, adapted from Geoff Barrall's dataScreenToggles()
+#	Original Author: EBS (Ryan Dunnam, adapted from Geoff Barrall's dataScreenToggles())
+#  	Modifed: 5/12/15		JHF (NIST)
+#
+#
 #	Description: delete voltage toggle regions and surrounding undesirable data
 #	Inputs: data (float64 numpy array), dwell time, screen parms, scale
 #	Returns: data (float64 numpy array)
@@ -287,7 +290,7 @@ def dataScreenToggles(data, screenParms, Scale = 1):
 def dataScreenTogglesLITE(data, dwell, screenParms, Scale = 1):
 
 	ampThresh = abs(screenParms[0])	# Larger amplitudes are part of a toggle
-	nCut = screenParms[1]/(dwell*1e3)
+	nCut = screenParms[1]
 
 	lenData = len(data)
 	bigNum = 2*max([abs(data.min()),abs(data.max())]) # a number bigger than any in the dataset
