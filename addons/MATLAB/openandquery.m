@@ -17,7 +17,7 @@
 % December 3, 2014
 % NIST, Gaithersburg, MD 20899
 
-dbname = 'C:\sqlite\eventMD-PEG29-Reference.sqlite';	% Enter the path, including the database name, within the quotes
+dbname = '/Users/jhf1/Projects/mosaic/data/eventMD-PEG28-stepResponseAnalysis.sqlite';	% Enter the path, including the database name, within the quotes
 
 mksqlite('open',dbname);                                % Open the database
 fieldnames = mksqlite('PRAGMA table_info(metadata)');	  % Read in all fieldnames
