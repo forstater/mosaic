@@ -12,7 +12,6 @@ import mosaic.sqlite3MDIO as sqlite
 import mosaicgui.autocompleteedit as autocomplete
 from mosaic.utilities.resource_path import resource_path, last_file_in_directory
 import mosaic.utilities.fit_funcs as fit_funcs
-import mosaic.stepResponseAnalysis as sra
 
 import matplotlib.ticker as ticker
 # from mosaicgui.trajview.trajviewui import Ui_Dialog
@@ -243,7 +242,8 @@ class FitEventWindow(QtGui.QDialog):
 				self.eventIndexHorizontalSlider.setMaximum( len(self.queryData)-1 )
 
 		except sqlite3.OperationalError, err:
-			raise err
+			if not "RCConstant1" in str(err):
+				raise err
 		except:
 			raise
 
