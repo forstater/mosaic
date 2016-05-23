@@ -61,6 +61,57 @@ class QDFNode:
 		#print self.name, self.flag,self.type,self.size,self.count,
 		#print self.child,self.sibling,self.data
 
+	def write_node(file,name,flag,datatype,parent,sibling,data, offset=None):
+	#	Description:	Writes a single node to a .qdf file.
+	#	Author: 		Daniel Lathrop
+	#	Inputs:
+	#			file - an open file object
+	#			name - the name of the node
+	#			flag - the qdf node flag (0 or 2 are valid values)
+	#			datatype- none (0), short int (7), int (9), or double (13)
+	#			parent - the file offset of the parent node (or 0 if no parent)
+	#			sibling - the file offset of the prior sibling node (or 0 in none)
+	#			data - the nodes data
+		if offset:
+			file.seek(offset)
+		start = file.tell()
+		if parent:
+			file.seek(parent+16)
+			file.write(pack('I',start))
+		if sibling:
+			file.seek(sibling+20)
+			file.write(pack('I',start))
+		file.seek(start)
+		namelength = len(name)
+		codeval = ['B','b','H','h','I','i','L','l','f','d']
+		sizeval = [1,1,2,2,4,4,8,8,4,8]
+		if datatype == 0:
+			datasize = 0
+			count = 0
+		else:
+			count = len(data)
+			if datatype == 7:
+				datasize = 2
+			elif datatype == 9:
+				datasize = 4
+			elif datatype == 13:
+				datasize = 8
+			else:
+				raise QDFError('Data Type Incorrect'+name)
+		pos = 0
+		if count:
+			pos = start+32+namelength
+		file.write(pack('BBBBII',flag,0,0,datatype,datasize,count))
+		file.write(pack('IIIIHBB',pos,0,0,0,0,0,namelength))
+		file.write(name)
+		#print name, datatype, datasize, count, data, type(data)
+		if count:
+			if count == 1:
+				file.write(pack(codeval[datatype-4],data[0]))
+			else:
+				fwrite(file,count,data,codeval[datatype-4])
+		return start
+
 	def read_datafile_child(self, qdfobj, file, offset):
 		self.read_node(file, offset)
 		if self.name == 'Segments':
@@ -170,6 +221,23 @@ class QDFNode:
 			del self.data
 		else:
 			raise QDFError('Node Not Recognized C: '+self.name)
+
+
+	def set_data(self, data, dt, starttime, scale):
+	#	Description:	Sets the data in class QDFDataFile
+	#	Author: 		Daniel Lathrop
+	#	Inputs:
+	#			data - the data in floating point form
+	#			dt - the sampling rate
+	#			start - the start time of the data
+	#			scale - the scaling for converting to integer form for
+	#					writing to the .qdf file. If scale is 0, the data
+	#					is autoscaled when it is written.
+		self.dt = dt
+		self.scale = scale
+		self.data = data 
+		self.starttime = starttime
+		self.segmentcount = 1
 	
 	
 class QDFDataFile(object):
@@ -288,6 +356,66 @@ class QDFDataFile(object):
 		except QDFError, inst:
 			print inst
 		self.filename = filename
+
+	def write_single_segment(self):
+	#	Description:	Writes a processed segment of a buffered
+	#	Author: 		Ryan Dunnam
+		#file = open(self.filename)
+		## print "Writing with ThisOffset = %d, LastOffset = %d" %(self.thisSegmentOffset, self.lastSegmentOffset) ##DEBUG
+		self.lastSegmentOffset = write_node(self.filehandle, 'Segment', 0, 0, 0, self.lastSegmentOffset, None, offset = self.thisSegmentOffset)
+		offset = write_node(self.filehandle,'StartTime',2,13,self.thisSegmentOffset,0,(self.starttime.pop(),))
+		offset = write_node(self.filehandle,'Channels',2,self.datatype,0,offset,self.data * self.scale)
+		#file.close()
+
+	def write(self,filename):
+	#	Description:	Write class QDFDataFile to a .qdf file
+	#	Author: 		Daniel Lathrop
+	#	Inputs:
+	#			filename - the file to write
+		if self.scale == 0:
+			largest = max(abs(self.data))
+			if self.datasize == 2:
+				self.scale = math.ldexp(1,15-math.frexp(largest)[1])
+				#print "scale_2byte = ", self.scale, type(self.scale) ##DEBUG
+			elif self.datasize == 4:
+				self.scale = math.ldexp(1,15-math.frexp(largest)[1])	## Note:  currently set to just 15 due to QuB limitations, could be set as high as 30
+				#print "scale_4byte = ", self.scale, type(self.scale) ##DEBUG
+			else:
+				self.scale = 1
+		file = open(filename, mode = 'wb')
+		file.write('QUB_(;-)_QFS')
+		offset = write_node(file,'DataFile',0,0,0,0,None)
+		segoffset = write_node(file,'Segments',0,0,offset,0,None)
+		offset = write_node(file,'Sampling',2,13,0,segoffset,(self.dt,))
+		offset = write_node(file,'Scaling',2,13,0,offset,(self.scale,))
+		offset = write_node(file,'ADChannelCount',2,9,0,offset,(self.channelcount,))
+		offset = write_node(file,'ADDataSize',2,9,0,offset,(self.datasize,))	
+		offset = write_node(file,'ADDataType',2,9,0,offset,(self.datatype,))
+		
+		if self.segmentcount != 0:
+			## ensure that segements are max 1M points
+			self.segmentcount = ceil(len(self.data)/1e6)
+			self.starttime = range(0,len(self.data),1e6)
+			starttime_copy = self.starttime
+			starttime_copy.reverse()
+			data_range = range(0, len(self.data),int(1e6))
+			data_range.append(len(self.data))
+			i=0
+			firstFile=1
+			for j in data_range[1:]:
+				# make first segment the child of 'Segments' node and the rest siblings
+				if firstFile:
+					firstFile = 0
+					siboffset = write_node(file, 'Segment',0,0,segoffset,0,None)
+				else:
+					siboffset = write_node(file, 'Segment',0,0,0,siboffset,None)
+				offset = write_node(file,'StartTime',2,13,siboffset,0,(starttime_copy.pop()*self.dt,))
+				offset = write_node(file,'Channels',2,self.datatype,0,offset,self.data[i:j-1]*self.scale)
+				i=j
+		file.close()
+
+
+	
 		
 def qdf_V2I(fileList, Cfb, Rfb, scale_data=0, time_scale=0):
 #	Description:	Performs a conversion of voltage to current for a list of qdf data files.

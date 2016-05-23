@@ -81,7 +81,7 @@ class qdfTrajIO(mosaic.metaTrajIO.metaTrajIO):
 			
 			:Errors:
 
-				- `SamplingRateChangedError` : if the sampling rate for any data file differs from previous
+				- `SamplingRateChan	dError` : if the sampling rate for any data file differs from previous
 		"""
 		# Read a single file or a list of files. By setting scale_data 
 		# and time_scale to 0, we get back times in ms and current in pA.
