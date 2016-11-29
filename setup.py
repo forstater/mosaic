@@ -102,13 +102,13 @@ class mosaicDocs(Command):
 		# always build docs in the master branch.
 		os.system("git checkout master")
 		if self.html:
-			os.system("make -C _docs html")
+			os.system("make -C _nistpages html")
 		elif self.pdf:
-			os.system("make -C _docs latexpdf")
+			os.system("make -C _nistpages latexpdf")
 		elif self.rebuild:
-			os.system("make -C _docs clean html latexpdf")
+			os.system("make -C _nistpages clean html latexpdf")
 		else:
-			os.system("make -C _docs html latexpdf")
+			os.system("make -C _nistpages html latexpdf")
 
 setup(
 	cmdclass={
@@ -122,7 +122,7 @@ setup(
 		'mosaic_addons'     : mosaicAddons
 		},
 	name='mosaic-nist',
-	version=mosaic.__version__+'-'+mosaic.__build__,
+	version=mosaic.__version__+'+'+mosaic.__build__,
 	author='Arvind Balijepalli',
 	author_email='arvind.balijepalli@nist.gov',
 	packages=[
